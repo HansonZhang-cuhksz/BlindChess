@@ -33,7 +33,7 @@ if __name__ == "__main__":
     print("You are playing as", "Red" if color == 'r' else "Black")
 
     while True:
-        print(board)
+        # print(board)
 
         if board.is_terminated(turn):
             print(f"Game over! {chess.opposite_color(turn)} wins!")
