@@ -13,7 +13,9 @@ if __name__ == "__main__":
     while True:
         try:
             comm.send_message(".")
-            comm.receive_message()
+            start = input(">")
+            if start != "y":
+                comm.receive_message()
             break
         except ConnectionResetError:
             time.sleep(0.5)

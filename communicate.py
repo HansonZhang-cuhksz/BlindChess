@@ -1,6 +1,10 @@
 import socket
 class Comm:
     def __init__(self, swap: bool = False):
+        # self.MY_IP = "10.30.111.31"
+        # self.MY_PORT = 12345
+        # self.OPPO_IP = "10.30.161.214"
+        # self.OPPO_PORT = 12345
         self.MY_IP = "127.0.0.1"
         self.MY_PORT = 12345
         self.OPPO_IP = "127.0.0.1"
