@@ -2,23 +2,24 @@ import random
 import chess
 
 games = {}
+public_games = set()
 
-def subscribe_game(game_id, pwd):
-    assert game_id in games, "Game ID not found"
-    assert not games[game_id].guest_online, "Already subscribed"
-    assert games[game_id].pwd == pwd, "Invalid password"
-    games[game_id].guest_online = True
-    return games[game_id]
-    
-def unsubscribe_game(game_id):
-    assert game_id in games, "Game ID not found"
-    assert games[game_id].guest_online, "Not subscribed"
-    games[game_id].guest_online = False
+def subscribe_game(name, pwd):
+    assert name in games, "Game name not found"
+    assert not games[name].guest_online, "Already subscribed"
+    assert games[name].pwd == pwd, "Invalid password"
+    games[name].guest_online = True
+    return games[name]
+
+def unsubscribe_game(name):
+    assert name in games, "Game ID not found"
+    assert games[name].guest_online, "Not subscribed"
+    games[name].guest_online = False
 
 class GameState:
-    def __init__(self, pwd, game_id, first_selection):
+    def __init__(self, name, pwd, first_selection, public):
+        self.name = name
         self.pwd = pwd
-        self.game_id = game_id
         if first_selection == "Random":
             self.first = random.choice(["Host", "Guest"])
         else:
@@ -29,7 +30,10 @@ class GameState:
         self.exited = False
         self._host_to_guest = ""
         self._guest_to_host = ""
-        games[game_id] = self
+        games[name] = self
+        self.is_public = public
+        if public:
+            public_games.add(name)
 
     def read_guest(self):
         ret = self._guest_to_host
@@ -48,9 +52,11 @@ class GameState:
         self._guest_to_host = msg
 
     def __del__(self):
-        assert self.game_id in games, "Game ID not found in registry"
-        del games[self.game_id]
+        assert self.name in games, "Game ID not found in registry"
+        del games[self.name]
         self.exited = True
+        if self.name in public_games:
+            public_games.remove(self.name)
 
     def game_exited(self):
         return self.exited or not self.guest_online

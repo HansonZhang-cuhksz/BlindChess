@@ -10,7 +10,7 @@ def exit_game():
     if st.session_state.is_host:
         del st.session_state.game_state
     else:
-        unsubscribe_game(st.session_state.game_state.game_id)
+        unsubscribe_game(st.session_state.game_state.name)
     st.session_state.page = "home"
     for key in list(st.session_state.keys()):
         del st.session_state[key]
@@ -342,11 +342,17 @@ match st.session_state.page:
                 col1, col2, col3 = st.columns([1, 2, 1])
             with col2:
                 st.subheader("Create a New Game")
+                name = st.text_input("Game Name (Optional):", value="")
                 password = st.text_input("Password (Optional):", type="password")
                 first_selection = st.selectbox("First:", ["Random", "Me", "Opponent"])
+                public = st.checkbox("Public Game (Visible to others)", value=False)
                 if st.button("Create Game"):
-                    game_id = get_random_id(games.keys())
-                    st.session_state.game_state = GameState(password, game_id, first_selection)
+                    if not name:
+                        name = "Game_" + str(random.randint(0, 0xFFFFFFFF))
+                    if name in games:
+                        st.error("Game name already exists. Please choose another name.")
+                        st.stop()
+                    st.session_state.game_state = GameState(name, password, first_selection, public)
                     st.session_state.is_host = True
                     st.session_state.page = "lobby_host"
                     new_game_container.empty()
@@ -362,17 +368,16 @@ match st.session_state.page:
                 col1 = col2 = col3 = st.container()
             else:
                 col1, col2, col3 = st.columns([1, 2, 1])
+            with col1:
+                if st.button("Refresh"):
+                    st.rerun()
             with col2:
                 st.subheader("Join an Existing Game")
-                game_id = st.text_input("Game ID:")
+                name = st.text_input("Game Name:")
                 password = st.text_input("Password (Optional):", type="password")
                 if st.button("Join Game"):
-                    if not game_id.isdigit():
-                        st.error("Game ID must be an integer.")
-                        st.stop()
-                    game_id = int(game_id)
                     try:
-                        st.session_state.game_state = subscribe_game(game_id, password)
+                        st.session_state.game_state = subscribe_game(name, password)
                     except AssertionError as e:
                         match str(e):
                             case "Game ID not found":
@@ -390,6 +395,9 @@ match st.session_state.page:
                     st.session_state.page = "home"
                     join_game_container.empty()
                     st.rerun()
+                st.write("**Available Public Games:**")
+                for name in public_games:
+                    st.write(name)
     case "lobby_host":
         lobby_host_container = st.empty()
         with lobby_host_container.container():
@@ -401,7 +409,7 @@ match st.session_state.page:
                 if st.button("Back to Home"):
                     exit_game()
                 if not st.session_state.game_state.guest_online:
-                    st.info("Game ID: " + str(st.session_state.game_state.game_id))
+                    st.info("Game Name: " + st.session_state.game_state.name)
                     st.warning("⏳ Waiting for opponent to join...")
                 else:
                     st.success("✅ Opponent joined!")
@@ -413,6 +421,8 @@ match st.session_state.page:
         time.sleep(PAGE_REFRESH_DELAY)
         st.rerun()
     case "lobby_guest":
+        if st.session_state.game_state.name in public_games:
+            public_games.remove(st.session_state.game_state.name)
         lobby_guest_container = st.empty()
         with lobby_guest_container.container():
             if st.session_state.is_vertical:
@@ -421,6 +431,8 @@ match st.session_state.page:
                 col1, col2, col3 = st.columns([1, 2, 1])
             with col2:
                 if st.button("Back to Home"):
+                    if st.session_state.game_state.is_public:
+                        public_games.add(st.session_state.game_state.name)
                     exit_game()
                 if st.session_state.game_state.exited:
                     st.error("Host has closed the game. Returning to home page...")
