@@ -20,11 +20,13 @@ class Move:
         return f"{self.chess.type} from {self.start} to {self.end}" + (f" capturing {self.board.grid[self.end[0]][self.end[1]].type}" if self.is_capture else "")
 
     def run(self):
+        self.is_checkmate = self._check_checkmate()
         self.captured = self.board.grid[self.end[0]][self.end[1]]
         self.board.grid[self.start[0]][self.start[1]] = None
         self.chess.position = self.end
         self.board.grid[self.end[0]][self.end[1]] = self.chess
-        self.is_checkmate = self._check_checkmate()
+        if not self.is_checkmate:
+            self.is_checkmate = self._check_checkmate()
         self.done = True
 
     def undo(self):
@@ -268,9 +270,10 @@ class Board:
     def find_king(self, color):
         for i in range(10):
             for j in range(9):
-                piece = self.grid[i][j]
-                if piece and piece.type == '将' and piece.color == color:
-                    return (i, j)
+                if self.grid[i][j]:
+                    piece = self.grid[i][j]
+                    if piece.type == '将' and piece.color == color:
+                        return (i, j)
         raise ValueError("King not found")
 
     def get_all_moves(self, color):
@@ -287,8 +290,9 @@ class Board:
         for move in self.get_all_moves(next_color):
             move.run()
             next_board = move.board
-            if not next_board.king_in_check(next_color):
-                terminated = False
+            if not next_board.king_is_captured(next_color):
+                if not next_board.king_in_check(next_color):
+                    terminated = False
             move.undo()
         return terminated
 
@@ -299,6 +303,13 @@ class Board:
             if move.end == king_pos:
                 return True
         return False
+    
+    def king_is_captured(self, color):
+        try:
+            self.find_king(color)
+            return False
+        except ValueError:
+            return True
 
 if __name__ == "__main__":
     board = Board()
