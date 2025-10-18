@@ -201,6 +201,7 @@ def handle_host_cmd():
                 assert st.session_state.status == "wait_move", f"Not waiting for move, status is {st.session_state.status}"
                 _, x, y, piece_type, tx, ty = st.session_state.game_state.read_host_cmd
                 x, y, tx, ty = 9 - int(x), 8 - int(y), 9 - int(tx), 8 - int(ty)
+                st.session_state.last_move = (x, y, piece_type, tx, ty)
                 st.session_state.info = ("info",f"Opponent moved {piece_type} from {get_pos_str(x, y)} to {get_pos_str(tx, ty)}. Your turn to argue.")
                 st.session_state.status = "argue"
             case "validate":
@@ -505,6 +506,11 @@ match st.session_state.page:
                             label = "🟦"
                         if (row, col_idx - 1) == st.session_state.pos_to:
                             label = "🟩"
+                        if st.session_state.status == "argue":
+                            if (row, col_idx - 1) == st.session_state.last_move[0:2]:
+                                label = "🟥"
+                            if (row, col_idx - 1) == st.session_state.last_move[3:5]:
+                                label = "🟧"
                         if st.button(label, key=f"{row}_{col_idx}"):
                             if st.session_state.status == "move":
                                 if not st.session_state.pos_from:
