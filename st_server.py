@@ -8,12 +8,12 @@ from game_state import *
 
 def exit_game():
     if st.session_state.is_host:
-        del st.session_state.game_state
+        st.session_state.game_state.clean()
     else:
         unsubscribe_game(st.session_state.game_state.name)
-    st.session_state.page = "home"
     for key in list(st.session_state.keys()):
         del st.session_state[key]
+    st.session_state.page = "home"
     st.rerun()
 
 def cancel_move():

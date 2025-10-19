@@ -51,7 +51,7 @@ class GameState:
     def write_host(self, msg):
         self._guest_to_host = msg
 
-    def __del__(self):
+    def clean(self):
         assert self.name in games, "Game ID not found in registry"
         del games[self.name]
         self.exited = True
