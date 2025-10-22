@@ -1,5 +1,8 @@
 import random
+import threading
+
 import chess
+from ai_player import ai_thread
 
 games = {}
 public_games = set()
@@ -17,7 +20,7 @@ def unsubscribe_game(name):
     games[name].guest_online = False
 
 class GameState:
-    def __init__(self, name, pwd, first_selection, public):
+    def __init__(self, name, pwd, first_selection, public, use_ai):
         self.name = name
         self.pwd = pwd
         if first_selection == "Random":
@@ -28,6 +31,9 @@ class GameState:
         self.board = chess.Board()
         self.started = False
         self.exited = False
+        self.use_ai = use_ai
+        if use_ai:
+            self.ai_thread = threading.Thread(target=ai_thread, daemon=True)
         self._host_to_guest = ""
         self._guest_to_host = ""
         games[name] = self
